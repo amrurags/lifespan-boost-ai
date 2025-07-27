@@ -16,6 +16,9 @@ const config: CapacitorConfig = {
       androidSpinnerStyle: "large",
       iosSpinnerStyle: "small",
       spinnerColor: "#ffffff"
+    },
+    Camera: {
+      androidRequestPermissions: true
     }
   }
 };

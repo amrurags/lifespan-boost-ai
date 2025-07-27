@@ -3,8 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Apple, Coffee, Utensils, Search } from "lucide-react";
+import { Plus, Apple, Coffee, Utensils, Search, Sparkles } from "lucide-react";
 import { useState } from "react";
+import PhotoNutritionAnalyzer from "@/components/PhotoNutritionAnalyzer";
+import { FoodAnalysisResult } from "@/services/foodRecognitionService";
+import { useToast } from "@/hooks/use-toast";
 
 interface NutritionEntry {
   id: number;
@@ -18,12 +21,26 @@ interface NutritionEntry {
 
 const NutritionTracker = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  
-  const todayEntries: NutritionEntry[] = [
+  const [todayEntries, setTodayEntries] = useState<NutritionEntry[]>([
     { id: 1, name: "Greek Yogurt with Berries", calories: 150, protein: 15, carbs: 20, fat: 2, time: "8:30 AM" },
     { id: 2, name: "Grilled Chicken Salad", calories: 350, protein: 35, carbs: 15, fat: 18, time: "12:45 PM" },
     { id: 3, name: "Quinoa Bowl", calories: 420, protein: 18, carbs: 65, fat: 12, time: "6:15 PM" },
-  ];
+  ]);
+  const { toast } = useToast();
+  
+  const handleFoodAdded = (analysis: FoodAnalysisResult) => {
+    const newEntries = analysis.foods.map((food, index) => ({
+      id: Date.now() + index,
+      name: food.name,
+      calories: food.calories,
+      protein: food.protein,
+      carbs: food.carbs,
+      fat: food.fat,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }));
+    
+    setTodayEntries(prev => [...prev, ...newEntries]);
+  };
 
   const dailyGoals = {
     calories: 2000,
@@ -150,14 +167,28 @@ const NutritionTracker = () => {
           </CardContent>
         </Card>
 
+        {/* AI Photo Scanner */}
+        <Card className="shadow-card border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              AI Food Scanner
+            </CardTitle>
+            <CardDescription>Take a photo to instantly identify food and calculate calories</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PhotoNutritionAnalyzer onFoodAdded={handleFoodAdded} />
+          </CardContent>
+        </Card>
+
         {/* Add Food Search */}
         <Card className="shadow-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Search className="h-5 w-5 text-primary" />
-              Add Food
+              Manual Food Search
             </CardTitle>
-            <CardDescription>Search for foods to add to your log</CardDescription>
+            <CardDescription>Search for foods to add manually</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex gap-2">
