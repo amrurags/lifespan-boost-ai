@@ -2,7 +2,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Activity, Target, TrendingUp, Zap, Brain } from "lucide-react";
+import { Heart, Activity, Target, TrendingUp, Zap, Brain, Flame, Trophy, Star, Gift } from "lucide-react";
+import { useState, useEffect } from "react";
+import { aiInsightsService, Achievement, HealthData } from "@/services/aiInsightsService";
 import healthHero from "@/assets/health-hero.jpg";
 import nutritionIcon from "@/assets/nutrition-icon.jpg";
 import workoutIcon from "@/assets/workout-icon.jpg";
@@ -18,6 +20,19 @@ interface HealthMetric {
 }
 
 const HealthDashboard = () => {
+  const [healthData, setHealthData] = useState<HealthData | null>(null);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [motivationalMessage, setMotivationalMessage] = useState("");
+
+  useEffect(() => {
+    const data = aiInsightsService.getHealthData();
+    const userAchievements = aiInsightsService.getAchievements();
+    const message = aiInsightsService.getMotivationalMessage(data.streaks);
+    
+    setHealthData(data);
+    setAchievements(userAchievements);
+    setMotivationalMessage(message);
+  }, []);
   const healthMetrics: HealthMetric[] = [
     { label: "Daily Steps", value: 8240, target: 10000, unit: "steps", trend: "up", color: "health" },
     { label: "Water Intake", value: 6, target: 8, unit: "glasses", trend: "up", color: "calm" },
@@ -31,6 +46,26 @@ const HealthDashboard = () => {
     "Add strength training 2x per week to boost metabolism",
     "Drink water upon waking to kickstart hydration"
   ];
+
+  const getStreakColor = (days: number) => {
+    if (days >= 14) return "text-orange-500";
+    if (days >= 7) return "text-primary";
+    if (days >= 3) return "text-info";
+    return "text-muted-foreground";
+  };
+
+  const getStreakEmoji = (days: number) => {
+    if (days >= 14) return "🔥";
+    if (days >= 7) return "⚡";
+    if (days >= 3) return "✨";
+    return "📅";
+  };
+
+  if (!healthData) {
+    return <div className="min-h-screen bg-gradient-vitality flex items-center justify-center">
+      <div className="text-center">Loading your health dashboard...</div>
+    </div>;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-vitality p-4 md:p-6">
@@ -84,6 +119,127 @@ const HealthDashboard = () => {
         ))}
       </div>
 
+      {/* Gamification Section - Streaks & Achievements */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Daily Streaks */}
+        <Card className="shadow-card bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950 dark:to-red-950 border-orange-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Flame className="h-5 w-5 text-orange-500" />
+              Daily Streaks
+            </CardTitle>
+            <CardDescription>Keep the momentum going!</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center space-y-2">
+                <div className="text-2xl">{getStreakEmoji(healthData.streaks.nutrition)}</div>
+                <div className={`text-2xl font-bold ${getStreakColor(healthData.streaks.nutrition)}`}>
+                  {healthData.streaks.nutrition}
+                </div>
+                <div className="text-sm text-muted-foreground">Nutrition</div>
+                <Badge variant="secondary" className="text-xs">
+                  +{aiInsightsService.calculateStreakBonus(healthData.streaks.nutrition)} XP
+                </Badge>
+              </div>
+              <div className="text-center space-y-2">
+                <div className="text-2xl">{getStreakEmoji(healthData.streaks.workout)}</div>
+                <div className={`text-2xl font-bold ${getStreakColor(healthData.streaks.workout)}`}>
+                  {healthData.streaks.workout}
+                </div>
+                <div className="text-sm text-muted-foreground">Workouts</div>
+                <Badge variant="secondary" className="text-xs">
+                  +{aiInsightsService.calculateStreakBonus(healthData.streaks.workout)} XP
+                </Badge>
+              </div>
+              <div className="text-center space-y-2">
+                <div className="text-2xl">{getStreakEmoji(healthData.streaks.water)}</div>
+                <div className={`text-2xl font-bold ${getStreakColor(healthData.streaks.water)}`}>
+                  {healthData.streaks.water}
+                </div>
+                <div className="text-sm text-muted-foreground">Hydration</div>
+                <Badge variant="secondary" className="text-xs">
+                  +{aiInsightsService.calculateStreakBonus(healthData.streaks.water)} XP
+                </Badge>
+              </div>
+              <div className="text-center space-y-2">
+                <div className="text-2xl">{getStreakEmoji(healthData.streaks.sleep)}</div>
+                <div className={`text-2xl font-bold ${getStreakColor(healthData.streaks.sleep)}`}>
+                  {healthData.streaks.sleep}
+                </div>
+                <div className="text-sm text-muted-foreground">Sleep</div>
+                <Badge variant="secondary" className="text-xs">
+                  +{aiInsightsService.calculateStreakBonus(healthData.streaks.sleep)} XP
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Achievements */}
+        <Card className="shadow-card bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950 dark:to-orange-950 border-yellow-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-yellow-500" />
+              Achievements
+            </CardTitle>
+            <CardDescription>Your health milestones</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {achievements.slice(0, 3).map((achievement) => (
+                <div 
+                  key={achievement.id} 
+                  className={`flex items-center gap-3 p-3 rounded-lg border transition-smooth ${
+                    achievement.unlocked 
+                      ? 'bg-gradient-to-r from-yellow-100 to-orange-100 dark:from-yellow-900 dark:to-orange-900 border-yellow-300' 
+                      : 'bg-muted/50 border-muted'
+                  }`}
+                >
+                  <div className={`text-2xl ${achievement.unlocked ? '' : 'grayscale opacity-50'}`}>
+                    {achievement.icon}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className={`font-medium ${achievement.unlocked ? 'text-foreground' : 'text-muted-foreground'}`}>
+                      {achievement.title}
+                    </h4>
+                    <p className="text-xs text-muted-foreground">{achievement.description}</p>
+                    {!achievement.unlocked && (
+                      <Progress 
+                        value={(achievement.progress / achievement.target) * 100} 
+                        className="h-1 mt-1" 
+                      />
+                    )}
+                  </div>
+                  {achievement.unlocked && (
+                    <Badge variant="secondary" className="text-xs">
+                      <Star className="h-3 w-3 mr-1" />
+                      Unlocked
+                    </Badge>
+                  )}
+                </div>
+              ))}
+              <Button variant="outline" size="sm" className="w-full mt-2">
+                <Gift className="h-4 w-4 mr-2" />
+                View All Achievements
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Motivational Message */}
+      <Card className="shadow-card bg-gradient-health text-white mb-8">
+        <CardContent className="py-6">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold mb-2">{motivationalMessage}</h3>
+            <p className="text-white/90 text-sm">
+              You've logged nutrition for {healthData.streaks.nutrition} days straight! 
+              {healthData.streaks.nutrition >= 7 ? " You're building incredible habits!" : " Keep going to build stronger habits!"}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
       {/* Main Features Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Nutrition Tracking */}
