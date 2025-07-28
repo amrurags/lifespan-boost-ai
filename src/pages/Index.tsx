@@ -2,6 +2,8 @@ import { useState } from "react";
 import HealthDashboard from "@/components/HealthDashboard";
 import NutritionTracker from "@/components/NutritionTracker";
 import AIInsightsPage from "@/components/AIInsightsPage";
+import FitnessTracker from "@/components/FitnessTracker";
+import ProfilePage from "@/components/ProfilePage";
 import MobileNavigation from "@/components/MobileNavigation";
 
 const Index = () => {
@@ -14,11 +16,11 @@ const Index = () => {
       case "nutrition":
         return <NutritionTracker />;
       case "fitness":
-        return <div className="p-4 text-center">Fitness tracker coming soon!</div>;
+        return <FitnessTracker />;
       case "insights":
         return <AIInsightsPage />;
       case "profile":
-        return <div className="p-4 text-center">Profile settings coming soon!</div>;
+        return <ProfilePage />;
       default:
         return <HealthDashboard />;
     }
